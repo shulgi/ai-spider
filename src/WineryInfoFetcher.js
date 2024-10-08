@@ -11,30 +11,38 @@ import {
   Paper,
   Container,
   Typography,
+  Alert,
 } from "@mui/material";
 
 const WineryInfoFetcher = () => {
   const [wineries, setWineries] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const fetchWineryInfo = async (wineryName) => {
     try {
+      console.log("Fetching info for:", wineryName);
       const response = await fetch(
         `/api/getWineryInfo?wineryName=${encodeURIComponent(wineryName)}`,
       );
+      console.log("Response status:", response.status);
       if (!response.ok) {
-        throw new Error("Failed to fetch winery info");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return await response.json();
+      const data = await response.json();
+      console.log("Fetched data:", data);
+      return data;
     } catch (error) {
       console.error("Error fetching winery info:", error);
+      setError(`Failed to fetch info for ${wineryName}: ${error.message}`);
       return null;
     }
   };
 
   const handleFetchWineries = async () => {
     setLoading(true);
+    setError(null);
     const wineryNames = input.split("\n").filter((name) => name.trim() !== "");
     const wineryPromises = wineryNames.map(fetchWineryInfo);
     const wineryResults = await Promise.all(wineryPromises);
@@ -65,6 +73,12 @@ const WineryInfoFetcher = () => {
       >
         {loading ? "Fetching..." : "Fetch Winery Info"}
       </Button>
+
+      {error && (
+        <Alert severity="error" style={{ marginTop: "1rem" }}>
+          {error}
+        </Alert>
+      )}
 
       {wineries.length > 0 && (
         <TableContainer component={Paper} style={{ marginTop: "2rem" }}>
